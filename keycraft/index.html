@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Keycraft</title>
+  <style>
+    body { margin: 0; font-family: monospace; }
+    canvas { background: #111; display: block; margin: auto; }
+  </style>
+</head>
+<body>
+<canvas id="game" width="500" height="500"></canvas>
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const gridSize = 20;
+const cols = canvas.width / gridSize;
+const rows = canvas.height / gridSize;
+
+let player = { x: 5, y: 5, dir: 'down' };
+const hashtags = new Set();
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw grid
+  ctx.strokeStyle = '#333';
+  for (let x = 0; x <= cols; x++) {
+    ctx.beginPath();
+    ctx.moveTo(x * gridSize, 0);
+    ctx.lineTo(x * gridSize, canvas.height);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= rows; y++) {
+    ctx.beginPath();
+    ctx.moveTo(0, y * gridSize);
+    ctx.lineTo(canvas.width, y * gridSize);
+    ctx.stroke();
+  }
+
+  // Draw hashtags
+  ctx.fillStyle = '#1b387e';
+  hashtags.forEach(key => {
+    const [x, y] = key.split(',').map(Number);
+    ctx.fillText('[[]]', x * gridSize + 5, y * gridSize + 15);
+  });
+
+  // Draw player
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(player.x * gridSize, player.y * gridSize, gridSize, gridSize);
+}
+
+function movePlayer(dx, dy, dir) {
+  player.x = Math.max(0, Math.min(cols - 1, player.x + dx));
+  player.y = Math.max(0, Math.min(rows - 1, player.y + dy));
+  player.dir = dir;
+}
+
+function getFrontCoords() {
+  let dx = 0, dy = 0;
+  switch (player.dir) {
+    case 'up': dy = -1; break;
+    case 'down': dy = 1; break;
+    case 'left': dx = -1; break;
+    case 'right': dx = 1; break;
+  }
+  return { x: player.x + dx, y: player.y + dy };
+}
+
+function keyHandler(e) {
+  switch (e.key) {
+    case 'ArrowUp': movePlayer(0, -1, 'up'); break;
+    case 'ArrowDown': movePlayer(0, 1, 'down'); break;
+    case 'ArrowLeft': movePlayer(-1, 0, 'left'); break;
+    case 'ArrowRight': movePlayer(1, 0, 'right'); break;
+  }
+  draw();
+}
+
+canvas.addEventListener("click", () => {
+  const { x, y } = getFrontCoords();
+  if (x >= 0 && x < cols && y >= 0 && y < rows)
+    hashtags.add(`${x},${y}`);
+  draw();
+});
+
+canvas.addEventListener("contextmenu", e => {
+  e.preventDefault();
+  let { x, y } = getFrontCoords();
+  while (hashtags.has(`${x},${y}`)) {
+    hashtags.delete(`${x},${y}`);
+    switch (player.dir) {
+      case 'up': y--; break;
+      case 'down': y++; break;
+      case 'left': x--; break;
+      case 'right': x++; break;
+    }
+  }
+  draw();
+});
+
+document.addEventListener("keydown", keyHandler);
+draw();
+</script>
+</body>
+</html>
